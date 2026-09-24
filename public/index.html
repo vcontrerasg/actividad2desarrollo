@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestor de Productos</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --txt:#1c1e21; --acc:#b3122d; --bd:#dcdfe4; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--txt); }
+  header { background:var(--acc); color:#fff; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; }
+  main { max-width:900px; margin:24px auto; padding:0 16px; }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:8px; padding:20px; margin-bottom:20px; }
+  input, textarea, button { font:inherit; padding:8px 10px; border:1px solid var(--bd); border-radius:6px; }
+  input, textarea { width:100%; margin-bottom:10px; }
+  button { background:var(--acc); color:#fff; border:none; cursor:pointer; }
+  button.sec { background:#6b7280; }
+  .row { display:flex; gap:10px; } .row > * { flex:1; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:8px; border-bottom:1px solid var(--bd); }
+  .msg { color:var(--acc); min-height:1.2em; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <strong>Gestor de Productos</strong>
+  <span id="userbox" class="hidden"><span id="who"></span> <button class="sec" id="btnLogout">Salir</button></span>
+</header>
+<main>
+  <section id="auth" class="card">
+    <h2>Acceso</h2>
+    <input id="u" placeholder="Usuario" autocomplete="username">
+    <input id="p" type="password" placeholder="Contraseña (mín. 8 caracteres)" autocomplete="current-password">
+    <div class="row"><button id="btnLogin">Iniciar sesión</button><button class="sec" id="btnReg">Registrarme</button></div>
+    <p class="msg" id="authMsg"></p>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="card">
+      <h2 id="formTitle">Nuevo producto</h2>
+      <input id="nombre" placeholder="Nombre" maxlength="100">
+      <textarea id="desc" placeholder="Descripción" rows="2" maxlength="1000"></textarea>
+      <div class="row"><input id="precio" type="number" min="0" step="0.01" placeholder="Precio"><input id="stock" type="number" min="0" step="1" placeholder="Stock"></div>
+      <div class="row"><button id="btnSave">Guardar</button><button class="sec" id="btnCancel">Cancelar</button></div>
+      <p class="msg" id="appMsg"></p>
+    </div>
+    <div class="card">
+      <h2>Mis productos</h2>
+      <table><thead><tr><th>Nombre</th><th>Descripción</th><th>Precio</th><th>Stock</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let editId = null;
+
+async function api(url, method = 'GET', body) {
+  const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Error');
+  return data;
+}
+
+function showApp(username) {
+  $('auth').classList.toggle('hidden', !!username);
+  $('app').classList.toggle('hidden', !username);
+  $('userbox').classList.toggle('hidden', !username);
+  $('who').textContent = username || '';
+  if (username) load();
+}
+
+async function load() {
+  const items = await api('/api/productos');
+  const tbody = $('rows'); tbody.replaceChildren();
+  for (const it of items) {
+    const tr = document.createElement('tr');
+    for (const v of [it.nombre, it.descripcion, it.precio, it.stock]) {
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); // textContent evita XSS
+    }
+    const td = document.createElement('td');
+    const be = document.createElement('button'); be.textContent = 'Editar'; be.onclick = () => startEdit(it);
+    const bd = document.createElement('button'); bd.textContent = 'Eliminar'; bd.className = 'sec';
+    bd.onclick = async () => { if (confirm('¿Eliminar?')) { await api('/api/productos/' + it.id, 'DELETE'); load(); } };
+    td.append(be, ' ', bd); tr.appendChild(td); tbody.appendChild(tr);
+  }
+}
+
+function startEdit(it) {
+  editId = it.id; $('formTitle').textContent = 'Editar producto';
+  $('nombre').value = it.nombre; $('desc').value = it.descripcion || ''; $('precio').value = it.precio; $('stock').value = it.stock;
+}
+function resetForm() {
+  editId = null; $('formTitle').textContent = 'Nuevo producto';
+  for (const id of ['nombre', 'desc', 'precio', 'stock']) $(id).value = '';
+}
+
+$('btnCancel').onclick = resetForm;
+$('btnSave').onclick = async () => {
+  $('appMsg').textContent = '';
+  const body = { nombre: $('nombre').value, descripcion: $('desc').value, precio: $('precio').value, stock: $('stock').value };
+  try {
+    if (editId) await api('/api/productos/' + editId, 'PUT', body); else await api('/api/productos', 'POST', body);
+    resetForm(); load();
+  } catch (e) { $('appMsg').textContent = e.message; }
+};
+
+$('btnLogin').onclick = async () => {
+  try { const r = await api('/api/login', 'POST', { username: $('u').value, password: $('p').value }); $('p').value = ''; showApp(r.username); }
+  catch (e) { $('authMsg').textContent = e.message; }
+};
+$('btnReg').onclick = async () => {
+  try { await api('/api/registro', 'POST', { username: $('u').value, password: $('p').value }); $('authMsg').textContent = 'Registro exitoso, ya puedes iniciar sesión.'; }
+  catch (e) { $('authMsg').textContent = e.message; }
+};
+$('btnLogout').onclick = async () => { await api('/api/logout', 'POST'); showApp(null); };
+
+api('/api/me').then((r) => showApp(r.username)).catch(() => showApp(null));
+</script>
+</body>
+</html>
