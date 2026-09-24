@@ -71,7 +71,7 @@ async function tx(fn) {
   }
 }
 
-// Registra una accion en la tabla auditoria. Nunca debe romper la operacion principal.
+
 async function auditar(req, accion, entidad = null, entidadId = null, detalle = null, usuario = null) {
   try {
     const userId = usuario ? usuario.id : req.session.userId ?? null;
@@ -152,14 +152,14 @@ function validarProducto(b) {
   return [nombre.trim(), descripcion, p, s, cat];
 }
 
-// Verifica que la categoria (si viene) pertenezca al usuario autenticado.
+
 async function verificarCategoria(categoriaId, userId) {
   if (categoriaId === null) return;
   const [cat] = await query('SELECT id FROM categorias WHERE id = ? AND usuario_id = ?', [categoriaId, userId]);
   if (!cat) throw new HttpError(400, 'Categoria invalida');
 }
 
-// ---------- Categorias ----------
+
 app.get('/api/categorias', requireAuth, wrap(async (req, res) => {
   res.json(await query('SELECT id, nombre FROM categorias WHERE usuario_id = ? ORDER BY nombre', [req.session.userId]));
 }));
@@ -187,7 +187,7 @@ app.delete('/api/categorias/:id', requireAuth, wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
-// ---------- Productos ----------
+
 app.get('/api/productos', requireAuth, wrap(async (req, res) => {
   res.json(await query(
     `SELECT p.id, p.nombre, p.descripcion, p.precio, p.stock, p.categoria_id AS categoriaId, c.nombre AS categoria
@@ -225,7 +225,7 @@ app.delete('/api/productos/:id', requireAuth, wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
-// ---------- Movimientos de stock ----------
+
 app.get('/api/productos/:id/movimientos', requireAuth, wrap(async (req, res) => {
   const id = parseId(req.params.id);
   const [prod] = await query('SELECT id FROM productos WHERE id = ? AND usuario_id = ?', [id, req.session.userId]);
@@ -261,7 +261,7 @@ app.post('/api/productos/:id/movimientos', requireAuth, wrap(async (req, res) =>
   res.status(201).json({ stock });
 }));
 
-// ---------- Auditoria ----------
+
 app.get('/api/auditoria', requireAuth, wrap(async (req, res) => {
   res.json(await query(
     `SELECT id, accion, entidad, entidad_id AS entidadId, detalle, creado_en AS creadoEn
