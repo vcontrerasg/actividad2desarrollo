@@ -1,5 +1,7 @@
 import { $ } from './dom.js';
 import { api } from './api.js';
+import { abrirMovimientos } from './movimientos.js';
+import { cargarAuditoria } from './auditoria.js';
 
 let editId = null;
 
@@ -10,7 +12,7 @@ export async function cargarProductos() {
 
   for (const it of items) {
     const tr = document.createElement('tr');
-    for (const v of [it.nombre, it.descripcion, it.precio, it.stock]) {
+    for (const v of [it.nombre, it.categoria || 'Sin categoría', it.descripcion, it.precio, it.stock]) {
       const td = document.createElement('td');
       td.textContent = v; // textContent evita XSS
       tr.appendChild(td);
@@ -21,6 +23,10 @@ export async function cargarProductos() {
     btnEditar.textContent = 'Editar';
     btnEditar.onclick = () => iniciarEdicion(it);
 
+    const btnMov = document.createElement('button');
+    btnMov.textContent = 'Stock';
+    btnMov.onclick = () => abrirMovimientos(it, () => { cargarProductos(); cargarAuditoria(); });
+
     const btnEliminar = document.createElement('button');
     btnEliminar.textContent = 'Eliminar';
     btnEliminar.className = 'sec';
@@ -28,10 +34,11 @@ export async function cargarProductos() {
       if (confirm('¿Eliminar?')) {
         await api('/api/productos/' + it.id, 'DELETE');
         cargarProductos();
+        cargarAuditoria();
       }
     };
 
-    acciones.append(btnEditar, ' ', btnEliminar);
+    acciones.append(btnEditar, ' ', btnMov, ' ', btnEliminar);
     tr.appendChild(acciones);
     tbody.appendChild(tr);
   }
@@ -44,12 +51,13 @@ function iniciarEdicion(it) {
   $('desc').value = it.descripcion || '';
   $('precio').value = it.precio;
   $('stock').value = it.stock;
+  $('categoria').value = it.categoriaId ?? '';
 }
 
 function limpiarFormulario() {
   editId = null;
   $('formTitle').textContent = 'Nuevo producto';
-  for (const id of ['nombre', 'desc', 'precio', 'stock']) $(id).value = '';
+  for (const id of ['nombre', 'desc', 'precio', 'stock', 'categoria']) $(id).value = '';
 }
 
 export function initProductos() {
@@ -62,12 +70,14 @@ export function initProductos() {
       descripcion: $('desc').value,
       precio: $('precio').value,
       stock: $('stock').value,
+      categoriaId: $('categoria').value,
     };
     try {
       if (editId) await api('/api/productos/' + editId, 'PUT', body);
       else await api('/api/productos', 'POST', body);
       limpiarFormulario();
       cargarProductos();
+      cargarAuditoria();
     } catch (e) {
       $('appMsg').textContent = e.message;
     }
