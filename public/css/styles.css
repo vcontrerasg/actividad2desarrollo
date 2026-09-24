@@ -1,0 +1,56 @@
+:root {
+  --bg: #f5f6f8;
+  --card: #fff;
+  --txt: #1c1e21;
+  --acc: #b3122d;
+  --bd: #dcdfe4;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+}
+
+header {
+  background: var(--acc);
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+main { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+input, textarea, button {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+}
+
+input, textarea { width: 100%; margin-bottom: 10px; }
+
+button { background: var(--acc); color: #fff; border: none; cursor: pointer; }
+button.sec { background: #6b7280; }
+
+.row { display: flex; gap: 10px; }
+.row > * { flex: 1; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--bd); }
+
+.msg { color: var(--acc); min-height: 1.2em; }
+.hidden { display: none; }

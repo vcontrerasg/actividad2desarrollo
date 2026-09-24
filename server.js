@@ -9,9 +9,11 @@ const app = express();
 app.disable('x-powered-by');
 const pool = mariadb.createPool({
   host: process.env.DB_HOST || 'localhost',
+  port: Number(process.env.DB_PORT) || 3306,
   user: process.env.DB_USER || 'app_vuln',
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || 'app_vuln',
+  allowPublicKeyRetrieval: true,     
   connectionLimit: 5,
   insertIdAsNumber: true,
   bigIntAsNumber: true,
@@ -27,7 +29,6 @@ app.use(session({
 }));
 
 
-// Ejecuta una consulta parametrizada y libera la conexion
 async function query(sql, params) {
   let conn;
   try {
@@ -47,7 +48,7 @@ const wrap = (fn) => (req, res) =>
     res.status(500).json({ error: 'Error interno' });
   });
 
-// ---------- Autenticacion ----------
+
 app.post('/api/registro', wrap(async (req, res) => {
   const { username, password } = req.body;
   if (typeof username !== 'string' || !/^[\w.-]{3,50}$/.test(username))
@@ -87,7 +88,6 @@ app.post('/api/logout', (req, res) => req.session.destroy(() => res.json({ ok: t
 app.get('/api/me', (req, res) =>
   req.session.userId ? res.json({ username: req.session.username }) : res.status(401).json({ error: 'No autenticado' }));
 
-// ---------- CRUD de productos ----------
 function validarProducto(b) {
   const { nombre, descripcion = '', precio, stock } = b;
   if (typeof nombre !== 'string' || !nombre.trim() || nombre.length > 100) return null;
