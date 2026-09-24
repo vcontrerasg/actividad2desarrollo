@@ -1,11 +1,12 @@
 require('dotenv').config();
-const path = require('path');
+const path = require('node:path');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const mariadb = require('mariadb');
 
 const app = express();
+app.disable('x-powered-by');
 const pool = mariadb.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'app_vuln',
@@ -17,13 +18,14 @@ const pool = mariadb.createPool({
 });
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret',
   resave: false,
   saveUninitialized: false,
   cookie: { httpOnly: true, sameSite: 'lax', maxAge: 1000 * 60 * 60 },
 }));
-app.use(express.static(path.join(__dirname, 'public')));
+
 
 // Ejecuta una consulta parametrizada y libera la conexion
 async function query(sql, params) {

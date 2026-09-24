@@ -30,8 +30,8 @@
 <main>
   <section id="auth" class="card">
     <h2>Acceso</h2>
-    <input id="u" placeholder="Usuario" autocomplete="username">
-    <input id="p" type="password" placeholder="Contraseña (mín. 8 caracteres)" autocomplete="current-password">
+    <input id="u" aria-label="Usuario" placeholder="Usuario" autocomplete="username">
+    <input id="p" aria-label="Contraseña" type="password" placeholder="Contraseña (mín. 8 caracteres)" autocomplete="current-password">
     <div class="row"><button id="btnLogin">Iniciar sesión</button><button class="sec" id="btnReg">Registrarme</button></div>
     <p class="msg" id="authMsg"></p>
   </section>
@@ -39,9 +39,9 @@
   <section id="app" class="hidden">
     <div class="card">
       <h2 id="formTitle">Nuevo producto</h2>
-      <input id="nombre" placeholder="Nombre" maxlength="100">
-      <textarea id="desc" placeholder="Descripción" rows="2" maxlength="1000"></textarea>
-      <div class="row"><input id="precio" type="number" min="0" step="0.01" placeholder="Precio"><input id="stock" type="number" min="0" step="1" placeholder="Stock"></div>
+      <input id="nombre" aria-label="Nombre del Producto" placeholder="Nombre" maxlength="100">
+      <textarea id="desc" aria-label="Descripción" placeholder="Descripción" rows="2" maxlength="1000"></textarea>
+      <div class="row"><input id="precio" aria-label="Precio" type="number" min="0" step="0.01" placeholder="Precio"><input id="stock" aria-label="Stock" type="number" min="0" step="1" placeholder="Stock"></div>
       <div class="row"><button id="btnSave">Guardar</button><button class="sec" id="btnCancel">Cancelar</button></div>
       <p class="msg" id="appMsg"></p>
     </div>
@@ -56,7 +56,7 @@
 const $ = (id) => document.getElementById(id);
 let editId = null;
 
-async function api(url, method = 'GET', body) {
+async function api(url, method = 'GET', body = null) {
   const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Error');
