@@ -59,3 +59,4 @@ CREATE TABLE IF NOT EXISTS auditoria (
 CREATE INDEX idx_auditoria_usuario ON auditoria(usuario_id, creado_en);
 CREATE INDEX idx_movimientos_producto ON movimientos_stock(producto_id, creado_en);
  
+ ALTER TABLE usuarios MODIFY password_hash VARCHAR(255) NOT NULL;

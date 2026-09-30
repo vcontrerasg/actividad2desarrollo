@@ -4,6 +4,14 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const mariadb = require('mariadb');
+const argon2 = require('argon2');
+
+const ARGON2_OPTS = {
+  type: argon2.argon2id,
+  memoryCost: 19456, 
+  timeCost: 2,
+  parallelism: 1,
+};
 
 const app = express();
 app.disable('x-powered-by');
@@ -99,7 +107,7 @@ app.post('/api/registro', wrap(async (req, res) => {
   if (typeof password !== 'string' || password.length < 8)
     return res.status(400).json({ error: 'La contrasena debe tener al menos 8 caracteres' });
 
-  const hash = await bcrypt.hash(password, 12);
+  const hash = await argon2.hash(password, ARGON2_OPTS);
   try {
     await query('INSERT INTO usuarios (username, password_hash) VALUES (?, ?)', [username, hash]);
   } catch (e) {
@@ -116,7 +124,7 @@ app.post('/api/login', wrap(async (req, res) => {
     return res.status(400).json({ error: 'Datos invalidos' });
 
   const [user] = await query('SELECT id, username, password_hash FROM usuarios WHERE username = ?', [username]);
-  const ok = user && (await bcrypt.compare(password, user.password_hash));
+  const ok = user && (await argon2.verify(user.password_hash, password));
   if (!ok) {
     await auditar(req, 'login_fallido', 'usuario', null, 'Credenciales incorrectas', { id: null, username });
     return res.status(401).json({ error: 'Credenciales incorrectas' });
